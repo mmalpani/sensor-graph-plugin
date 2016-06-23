@@ -1,0 +1,47 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="sensor-graph.html">
+<link rel="import" href="../orov-behaviors/orov-emitter-behavior.html">
+
+
+<dom-module id="OROV-sensor-graph">
+    <template>
+        <sensor-graph id=g title="{{title}}" y-axis-label={{yAxisLabel}} 
+        x-axis-label={{xAxisLabel}} graph-color={{graphColor}} 
+        line-thickness={{lineThickness}}></sensor-graph>
+    </template>
+
+    <script src= "eventemitter2.js"> </script> 
+    <!--^^is this fine?-->
+    <script src= "../orov-behaviors/utilities.js"> </script>
+
+    <script>
+    Polymer({
+        is: 'OROV-sensor-graph',
+
+        properties: {
+            title: {type:String, value:"no title"},
+            xAxisLabel: {type:String, value:"missing x axis"},
+            yAxisLabel: {type:String, value:"missing y axis"},
+            graphColor: {type:String, value:"red"},
+            lineThickness: {type:Number, value:2}
+        },
+        
+        behaviors: [namespace('behaviors').oROVStandardImpl], //check this
+
+        //why can't this happen within sensor graph?
+        //how do i put multiple elements?
+        //wtf emitter?
+        registerEmitterHanlders: function(emitter) {
+            var self = this;
+            emitter.on('status', function(data) {
+                console.log("data recieved");
+                if ((data.depth != undefined) && (data.temp != undefined)) {
+                    console.log("data passed check");
+                    self.$.g.addData(data);
+                }
+            });
+        }
+    });
+
+    </script>
+</dom-module>

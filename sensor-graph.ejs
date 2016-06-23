@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://polygit2.appspot.com/components/webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="OROV-sensor-graph.html">
+    <script src= "eventemitter2.js"> </script>
+  </head>
+  <body>
+    <OROV-sensor-graph id=temp title="Temperature vs. Depth" y-axis-label="Temperature (C)" 
+    x-axis-label="Depth (m)" graph-color='red' 
+    line-thickness=2 event-emitter="{{emitter}}"></OROV-sensor-graph>
+    <script>
+        //what goes here? anything with the emitter?
+    </script>
+  </body>
+</html>

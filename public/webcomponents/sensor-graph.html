@@ -1,0 +1,154 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="sensor-graph">
+    <template>
+        <style>
+        :host {
+            display: block;
+            padding: 16px;
+            }
+        </style>
+        <div style="text-align:center;">
+        <h2>{{title}}</h2> 
+        <svg align="center" id="visualization" width="600" height="400"></svg>
+        </div>
+    </template>
+
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script>
+    Polymer({
+        is: 'sensor-graph',
+
+        properties: {
+            //interface variables
+            title: {type:String, value:"no title"},
+            xAxisLabel: {type:String, value:"missing x axis"},
+            yAxisLabel: {type:String, value:"missing y axis"},
+            graphColor: {type:String, value:""},
+            lineThickness: {type:Number, value:2}
+            //other ideas.
+            //ait for a few data points before re-drawing the graph.
+            //resize with the page.
+            //could make this a scatter plot and add a trendline (so not do averages)
+            //want to modify to code to work with any data type. instead of data.depth data["depth"]
+            //have 2 sets of data: one line graph with the averages, and one scatter with a trendline.
+
+        },
+
+        organizedData:{},
+        avgHM:[],
+
+        attached: function() {
+            console.log("graph element has been created!");
+        },
+
+        addData: function(item) {
+            if(this.organizedData[item.depth] == undefined){
+                this.organizedData[item.depth] = [];
+            } 
+            this.organizedData[item.depth].push(item.temp)
+            console.log("organized data");
+            console.dir(this.organizedData);
+
+            //updates the average for graphing
+            this.updateAvg(item.depth)
+            this.drawGraph()
+            console.log("data point added.");
+        },
+
+        //d is the depth of the new data point
+        updateAvg: function(d) {
+            console.log("updating...");
+                var x = this.organizedData[d];
+                var sum = 0;
+                for(var i = 0; i < x.length; i++) {
+                    sum += x[i];
+                }
+                var av = sum / x.length;
+                var depExists = this.avgHM.find(function(el) {return el.x == d})
+                if (depExists == undefined) {
+                    this.avgHM.push({'x': d, 'y': av})
+                } else {
+                    depExists.y = av
+                }
+                console.dir(this.avgHM);
+                this.avgHM.sort(function(a, b) {
+                    return a.x-b.x
+                });
+        },
+
+        drawGraph: function() {
+            console.log("drawing...");
+            d3.select('#visualization').selectAll("*").remove();
+            var vis = d3.select('#visualization'),
+                WIDTH = 600, //how do i make these variables?
+                HEIGHT = 400,
+                MARGINS = {
+                    top: 20,
+                    right: 20,
+                    bottom: 50,
+                    left: 50
+                },
+                //setting ranges
+                xRange = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([d3.min(this.avgHM, function(d) {
+                return d.x;
+                }), d3.max(this.avgHM, function(d) {
+                return d.x;
+                })]),
+                yRange = d3.scale.linear().range([HEIGHT - MARGINS.bottom, MARGINS.top]).domain([d3.min(this.avgHM, function(d) {
+                return d.y;
+                }), d3.max(this.avgHM, function(d) {
+                return d.y;
+                })]),
+                xAxis = d3.svg.axis()
+                    .scale(xRange)
+                    .tickSize(5)
+                    .tickSubdivide(true),
+                yAxis = d3.svg.axis()
+                    .scale(yRange)
+                    .tickSize(5)
+                    .orient('left')
+                    .tickSubdivide(true);
+
+            //drawing x axis
+            vis.append('svg:g')
+            .attr('class', 'x axis')
+            .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
+            .call(xAxis);
+            //drawing y axis
+            vis.append('svg:g')
+            .attr('class', 'y axis')
+            .attr('transform', 'translate(' + (MARGINS.left) + ',0)')
+            .call(yAxis);
+
+            var lineFunc = d3.svg.line()
+            .x(function(d) {
+                return xRange(d.x);
+            })
+            .y(function(d) {
+                return yRange(d.y);
+            })
+            .interpolate('linear');
+
+            //draw line
+            vis.append('svg:path')
+            .attr('d', lineFunc(this.avgHM))
+            .attr('stroke', this.graphColor)
+            .attr('stroke-width', this.lineThickness)
+            .attr('fill', 'none');
+
+            //y axis label
+            vis.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (MARGINS.left/3) +","+(HEIGHT/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+            .text(this.yAxisLabel);
+            //x axis label
+            vis.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (WIDTH/2) +","+(HEIGHT- (MARGINS.bottom/4))+")")  // centre below axis
+            .text(this.xAxisLabel);
+        }
+    });
+    </script>
+
+</dom-module>
