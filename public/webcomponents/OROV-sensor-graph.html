@@ -33,7 +33,7 @@
         //wtf emitter?
         registerEmitterHanlders: function(emitter) {
             var self = this;
-            emitter.on('status', function(data) {
+            emitter.on('plugin.telemetry.logData', function(data) {
                 console.log("data recieved");
                 if ((data.depth != undefined) && (data.temp != undefined)) {
                     console.log("data passed check");
