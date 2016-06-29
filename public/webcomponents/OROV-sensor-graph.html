@@ -7,11 +7,10 @@
     <template>
         <sensor-graph id=g title="{{title}}" y-axis-label={{yAxisLabel}} 
         x-axis-label={{xAxisLabel}} graph-color={{graphColor}} 
-        line-thickness={{lineThickness}}></sensor-graph>
+        line-thickness={{lineThickness}} sensor-type={{sensorType}}
+        depth-res={{depthRes}} sensor-res={{sensorRes}}></sensor-graph>
     </template>
 
-    <script src= "eventemitter2.js"> </script> 
-    <!--^^is this fine?-->
     <script src= "../orov-behaviors/utilities.js"> </script>
 
     <script>
@@ -23,19 +22,19 @@
             xAxisLabel: {type:String, value:"missing x axis"},
             yAxisLabel: {type:String, value:"missing y axis"},
             graphColor: {type:String, value:"red"},
-            lineThickness: {type:Number, value:2}
+            lineThickness: {type:Number, value:3},
+            sensorType: {type: String},
+            depthRes: {type:Number, value: 2},
+            sensorRes: {type:Number, value: 2}
         },
         
-        behaviors: [namespace('behaviors').oROVStandardImpl], //check this
+        behaviors: [namespace('behaviors').oROVStandardImpl],
 
-        //why can't this happen within sensor graph?
-        //how do i put multiple elements?
-        //wtf emitter?
         registerEmitterHanlders: function(emitter) {
             var self = this;
             emitter.on('plugin.telemetry.logData', function(data) {
                 console.log("data recieved");
-                if ((data.depth != undefined) && (data.temp != undefined)) {
+                if ((data.deep != undefined) && (data.temp != undefined)) {
                     console.log("data passed check");
                     self.$.g.addData(data);
                 }

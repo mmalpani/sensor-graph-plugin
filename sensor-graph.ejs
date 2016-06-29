@@ -1,4 +1,13 @@
-    <link rel="import" href="OROV-sensor-graph.html">
-    <OROV-sensor-graph id=temp title="Temperature vs. Depth" y-axis-label="Temperature (C)" 
+    <link rel="import" href="components/sensor-graph-plugin/OROV-sensor-graph.html">
+    <OROV-sensor-graph id="temp" title="Temperature vs. Depth" y-axis-label="Temperature (C)" 
     x-axis-label="Depth (m)" graph-color='red' 
-    line-thickness=2 event-emitter="{{cockpitEventEmitter}}"></OROV-sensor-graph>
+    line-thickness=2 sensor-type='temp' event-emitter="{{cockpitEventEmitter}}"></OROV-sensor-graph>
+
+    <OROV-sensor-graph id="depth" title="Depth vs. Depth" y-axis-label="Depth (m)" 
+    x-axis-label="Depth (m)" graph-color='green' 
+    line-thickness=4 sensor-type='deep' event-emitter="{{cockpitEventEmitter}}"></OROV-sensor-graph>
+
+    <OROV-sensor-graph id="servo" title="Servo vs. Depth" y-axis-label="servo (watts)" 
+    x-axis-label="Depth (m)" graph-color='blue' 
+    line-thickness=3 sensor-type='servo' event-emitter="{{cockpitEventEmitter}}">
+    </OROV-sensor-graph>

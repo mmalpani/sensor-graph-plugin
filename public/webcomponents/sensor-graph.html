@@ -21,50 +21,58 @@
 
         properties: {
             //interface variables
-            title: {type:String, value:"no title"},
-            xAxisLabel: {type:String, value:"missing x axis"},
-            yAxisLabel: {type:String, value:"missing y axis"},
-            graphColor: {type:String, value:""},
-            lineThickness: {type:Number, value:2}
-            //other ideas.
-            //ait for a few data points before re-drawing the graph.
-            //resize with the page.
-            //could make this a scatter plot and add a trendline (so not do averages)
-            //want to modify to code to work with any data type. instead of data.depth data["depth"]
-            //have 2 sets of data: one line graph with the averages, and one scatter with a trendline.
-
+            title: {type:String},
+            xAxisLabel: {type:String},
+            yAxisLabel: {type:String},
+            graphColor: {type:String},
+            lineThickness: {type:Number},
+            sensorType: {type: String},
+            depthRes: {type:Number},
+            sensorRes: {type:Number},
+            organizedData: {type: Object, value: function(){return {}}},
+            avgHM: {type: Object, value: function(){return []}}
         },
-
-        organizedData:{},
-        avgHM:[],
 
         attached: function() {
-            console.log("graph element has been created!");
+            console.log("sensor graph has been created!");
         },
 
-        addData: function(item) {
+        addData: function(itemIn) {
+            var item = {depth: this.correctRes(Number.parseFloat(itemIn.deep), this.depthRes), 
+                sensVal: Number.parseFloat(itemIn[this.sensorType])}
             if(this.organizedData[item.depth] == undefined){
                 this.organizedData[item.depth] = [];
             } 
-            this.organizedData[item.depth].push(item.temp)
-            console.log("organized data");
-            console.dir(this.organizedData);
+            this.organizedData[item.depth].push(item.sensVal)
 
-            //updates the average for graphing
+            //updates the average and graphs the data
             this.updateAvg(item.depth)
             this.drawGraph()
             console.log("data point added.");
         },
 
+        //takes in a number and a resolution and returns 
+        //the number rounded to the correct decimal
+        correctRes: function(d, res) {
+            if (res == 0) {
+                 return Math.round(d)
+            } else if (res > 0) {
+                return (Math.round(d * Math.pow(10, res)))/Math.pow(10, res)
+            }
+        },
+
         //d is the depth of the new data point
         updateAvg: function(d) {
             console.log("updating...");
+                //recalculates the average from initial data points
                 var x = this.organizedData[d];
                 var sum = 0;
                 for(var i = 0; i < x.length; i++) {
                     sum += x[i];
                 }
-                var av = sum / x.length;
+                //rounds sensor val avg to correct res
+                var av = this.correctRes((sum / x.length), this.sensorRes); 
+                //checks if this depth had an average before that needs to be replaced
                 var depExists = this.avgHM.find(function(el) {return el.x == d})
                 if (depExists == undefined) {
                     this.avgHM.push({'x': d, 'y': av})
@@ -72,6 +80,7 @@
                     depExists.y = av
                 }
                 console.dir(this.avgHM);
+                //orders the 'averages' data set to prepare for graphing
                 this.avgHM.sort(function(a, b) {
                     return a.x-b.x
                 });
@@ -79,9 +88,18 @@
 
         drawGraph: function() {
             console.log("drawing...");
-            d3.select('#visualization').selectAll("*").remove();
-            var vis = d3.select('#visualization'),
-                WIDTH = 600, //how do i make these variables?
+
+            var oldVis = d3.select('#visualization')
+            if (oldVis[0][0] == null) {
+                oldVis[0][0] = this.$.visualization
+            }            
+            oldVis.selectAll("*").remove();
+            //var vis = d3.select('#visualization'),
+            var vis = d3.select('#visualization')
+                if (vis[0][0] == null) {
+                    vis[0][0] = this.$.visualization
+                }
+                WIDTH = 600,
                 HEIGHT = 400,
                 MARGINS = {
                     top: 20,
@@ -139,13 +157,13 @@
 
             //y axis label
             vis.append("text")
-            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-            .attr("transform", "translate("+ (MARGINS.left/3) +","+(HEIGHT/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (MARGINS.left/3) +","+(HEIGHT/2)+")rotate(-90)")
             .text(this.yAxisLabel);
             //x axis label
             vis.append("text")
-            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-            .attr("transform", "translate("+ (WIDTH/2) +","+(HEIGHT- (MARGINS.bottom/4))+")")  // centre below axis
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (WIDTH/2) +","+(HEIGHT- (MARGINS.bottom/4))+")")
             .text(this.xAxisLabel);
         }
     });
