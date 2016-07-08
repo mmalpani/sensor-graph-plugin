@@ -29,8 +29,10 @@
             sensorType: {type: String},
             depthRes: {type:Number},
             sensorRes: {type:Number},
+            transDur: {type: Number, value: 1000}, //transition duration
             organizedData: {type: Object, value: function(){return {}}},
-            avgHM: {type: Object, value: function(){return []}}
+            avgHM: {type: Object, value: function(){return []}},
+            first: {type:Boolean, value: function() {return true}}
         },
 
         attached: function() {
@@ -93,7 +95,7 @@
             if (oldVis[0][0] == null) {
                 oldVis[0][0] = this.$.visualization
             }            
-            oldVis.selectAll("*").remove();
+            //oldVis.selectAll("*").remove(); //shouldn't have to do this.
             //var vis = d3.select('#visualization'),
             var vis = d3.select('#visualization')
                 if (vis[0][0] == null) {
@@ -109,15 +111,13 @@
                 },
                 //setting ranges
                 xRange = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([d3.min(this.avgHM, function(d) {
-                return d.x;
-                }), d3.max(this.avgHM, function(d) {
-                return d.x;
-                })]),
+                    return d.x;}), 
+                    d3.max(this.avgHM, function(d) {
+                    return d.x;})]),
                 yRange = d3.scale.linear().range([HEIGHT - MARGINS.bottom, MARGINS.top]).domain([d3.min(this.avgHM, function(d) {
-                return d.y;
-                }), d3.max(this.avgHM, function(d) {
-                return d.y;
-                })]),
+                    return d.y;}), 
+                    d3.max(this.avgHM, function(d) {
+                    return d.y;})]),
                 xAxis = d3.svg.axis()
                     .scale(xRange)
                     .tickSize(5)
@@ -128,44 +128,130 @@
                     .orient('left')
                     .tickSubdivide(true);
 
-            //drawing x axis
-            vis.append('svg:g')
-            .attr('class', 'x axis')
-            .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
-            .call(xAxis);
-            //drawing y axis
-            vis.append('svg:g')
-            .attr('class', 'y axis')
-            .attr('transform', 'translate(' + (MARGINS.left) + ',0)')
-            .call(yAxis);
-
+            //line func
             var lineFunc = d3.svg.line()
-            .x(function(d) {
-                return xRange(d.x);
-            })
-            .y(function(d) {
-                return yRange(d.y);
-            })
-            .interpolate('linear');
+                .x(function(d) {
+                    return xRange(d.x);
+                })
+                .y(function(d) {
+                    return yRange(d.y);
+                })
+                .interpolate('linear');
 
-            //draw line
-            vis.append('svg:path')
-            .attr('d', lineFunc(this.avgHM))
-            .attr('stroke', this.graphColor)
-            .attr('stroke-width', this.lineThickness)
-            .attr('fill', 'none');
+            if (this.first) {
+                //drawing x axis
+                vis.append('svg:g')
+                    .attr('class', 'x axis')
+                    .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
+                    .call(xAxis);
+                //drawing y axis
+                vis.append('svg:g')
+                    .attr('class', 'y axis')
+                    .attr('transform', 'translate(' + (MARGINS.left) + ',0)')
+                    .call(yAxis);
 
-            //y axis label
-            vis.append("text")
-            .attr("text-anchor", "middle")
-            .attr("transform", "translate("+ (MARGINS.left/3) +","+(HEIGHT/2)+")rotate(-90)")
-            .text(this.yAxisLabel);
-            //x axis label
-            vis.append("text")
-            .attr("text-anchor", "middle")
-            .attr("transform", "translate("+ (WIDTH/2) +","+(HEIGHT- (MARGINS.bottom/4))+")")
-            .text(this.xAxisLabel);
+                //draw line
+                vis.append('svg:path')
+                    .attr('id', 'sensorLine')
+                    .attr('d', lineFunc(this.avgHM))
+                    .attr('stroke', this.graphColor)
+                    .attr('stroke-width', this.lineThickness)
+                    .attr('fill', 'none');
+
+                //draw scatter plot
+                console.dir(this.avgHM);
+                var self = this;
+                this.avgHM.forEach(function(d){
+                    var xPt = xRange(d.x);
+                    var yPt = yRange(d.y);
+                    vis.append("svg:circle")
+                        .attr("cx",xPt)
+                        .attr("cy", yPt)
+                        .attr('r', self.lineThickness + 3)
+                        .attr('fill', self.graphColor)
+                        .style('opacity', 0.15)
+                        .on('mouseover', function(f) {
+                            this['attributes'].style.nodeValue = "opacity: 0.9;"; //fix this with stylesheets
+                            var g = vis.append('g').attr('id', 'sensTag'); //WORKING ON THIS!!
+                            g.append('text').text("depth: "+ f.x)
+                                .attr('x', xRange(f.x))
+                                .attr('y', yRange(f.y))
+                            g.append('text').text(self.sensorType + ": "+ f.y)
+                                .attr('x', xRange(f.x))
+                                .attr('y', yRange(f.y) + 16)})
+                        .on('mouseout', function(f) {
+                            this['attributes'].style.nodeValue = "opacity: 0.15;";
+                            vis.select('#sensTag').remove();})
+                    });
+                //y axis label
+                vis.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate("+ (MARGINS.left/3) +","+(HEIGHT/2)+")rotate(-90)")
+                .text(this.yAxisLabel);
+                //x axis label
+                vis.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate("+ (WIDTH/2) +","+(HEIGHT- (MARGINS.bottom/4))+")")
+                .text(this.xAxisLabel);
+
+                this.first = false;
+
+            } else {
+                vis.select('.x.axis').transition()
+                    .duration(this.transDur)
+                    .ease('linear')
+                    .call(xAxis)
+                vis.select('.y.axis').transition()
+                    .duration(this.transDur)
+                    .ease('linear')
+                    .call(yAxis)
+                vis.select('#sensorLine').transition()
+                    .duration(this.transDur)
+                    .ease('linear')
+                    .attr('d', lineFunc(this.avgHM))
+
+
+                //Update all circles
+                vis.selectAll("circle")
+                    .data(this.avgHM)
+                    .transition()
+                    .duration(this.transDur)
+                    .ease('linear')
+                    .attr("cx", function(d) { return xRange(d.x);})
+                    .attr("cy", function(d) { return yRange(d.y);})
+
+                    //Enter new circles
+                    var self = this;
+                    vis.selectAll("circle")
+                       .data(this.avgHM)
+                       .enter()
+                       .append("circle")
+                       .attr("cx", function(d) {
+                           return xRange(d.x);
+                       })
+                       .attr("cy", function(d) {
+                            return yRange(d.y);
+                       })
+                       .attr('r', this.lineThickness + 3)
+                       .attr('fill', this.graphColor)
+                       .style('opacity', 0.15)
+                       .on('mouseover', function(f) {
+                            this['attributes'].style.nodeValue = "opacity: 0.9;"; //fix this with stylesheets
+                            var xPt = xRange(f.x);
+                            var yPt = yRange(f.y);
+                            var g = vis.append('g').attr('id', 'sensTag');
+                            g.append('text').text("depth: "+ f.x)
+                                .attr('x', xPt)
+                                .attr('y', yPt)
+                            g.append('text').text(self.sensorType + ": "+ f.y)
+                                .attr('x', xPt)
+                                .attr('y', yPt + 16)})
+                        .on('mouseout', function(f) {
+                            this['attributes'].style.nodeValue = "opacity: 0.15;";
+                            vis.select('#sensTag').remove();})
+
         }
+      }
     });
     </script>
 
