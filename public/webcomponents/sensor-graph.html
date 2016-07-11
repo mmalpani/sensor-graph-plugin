@@ -14,7 +14,7 @@
         </div>
     </template>
 
-    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="../d3/d3.min.js" charset="utf-8"></script>
     <script>
     Polymer({
         is: 'sensor-graph',
@@ -50,7 +50,6 @@
             //updates the average and graphs the data
             this.updateAvg(item.depth)
             this.drawGraph()
-            console.log("data point added.");
         },
 
         //takes in a number and a resolution and returns 
@@ -65,7 +64,6 @@
 
         //d is the depth of the new data point
         updateAvg: function(d) {
-            console.log("updating...");
                 //recalculates the average from initial data points
                 var x = this.organizedData[d];
                 var sum = 0;
@@ -81,7 +79,6 @@
                 } else {
                     depExists.y = av
                 }
-                console.dir(this.avgHM);
                 //orders the 'averages' data set to prepare for graphing
                 this.avgHM.sort(function(a, b) {
                     return a.x-b.x
@@ -89,8 +86,6 @@
         },
 
         drawGraph: function() {
-            console.log("drawing...");
-
             var oldVis = d3.select('#visualization')
             if (oldVis[0][0] == null) {
                 oldVis[0][0] = this.$.visualization
@@ -101,7 +96,7 @@
                 if (vis[0][0] == null) {
                     vis[0][0] = this.$.visualization
                 }
-                WIDTH = 600,
+                WIDTH = 600, //var
                 HEIGHT = 400,
                 MARGINS = {
                     top: 20,
@@ -110,18 +105,23 @@
                     left: 50
                 },
                 //setting ranges
-                xRange = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([d3.min(this.avgHM, function(d) {
-                    return d.x;}), 
-                    d3.max(this.avgHM, function(d) {
-                    return d.x;})]),
-                yRange = d3.scale.linear().range([HEIGHT - MARGINS.bottom, MARGINS.top]).domain([d3.min(this.avgHM, function(d) {
-                    return d.y;}), 
-                    d3.max(this.avgHM, function(d) {
-                    return d.y;})]),
+                xRange = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right])
+                    .domain([d3.min(this.avgHM, 
+                        function(d) {return d.x;}), 
+                        d3.max(this.avgHM, 
+                        function(d) {return d.x;})]),
+
+                yRange = d3.scale.linear().range([HEIGHT - MARGINS.bottom, MARGINS.top])
+                    .domain([d3.min(this.avgHM, 
+                        function(d) {return d.y;}), 
+                        d3.max(this.avgHM, 
+                        function(d) {return d.y;})]),
+
                 xAxis = d3.svg.axis()
                     .scale(xRange)
                     .tickSize(5)
                     .tickSubdivide(true),
+
                 yAxis = d3.svg.axis()
                     .scale(yRange)
                     .tickSize(5)
@@ -144,6 +144,7 @@
                     .attr('class', 'x axis')
                     .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
                     .call(xAxis);
+
                 //drawing y axis
                 vis.append('svg:g')
                     .attr('class', 'y axis')
@@ -239,6 +240,7 @@
                             this['attributes'].style.nodeValue = "opacity: 0.9;"; //fix this with stylesheets
                             var xPt = xRange(f.x);
                             var yPt = yRange(f.y);
+                            console.log("REGISTERING MOUSE OVER");
                             var g = vis.append('g').attr('id', 'sensTag');
                             g.append('text').text("depth: "+ f.x)
                                 .attr('x', xPt)
@@ -247,6 +249,7 @@
                                 .attr('x', xPt)
                                 .attr('y', yPt + 16)})
                         .on('mouseout', function(f) {
+                            console.log("REGISTERING MOUSE OVER");
                             this['attributes'].style.nodeValue = "opacity: 0.15;";
                             vis.select('#sensTag').remove();})
 
